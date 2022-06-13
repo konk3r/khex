@@ -1,17 +1,15 @@
 // Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Button
-import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.SwingPanel
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -38,31 +36,27 @@ fun App() {
         var isFileChooserOpen by remember { mutableStateOf(false) }
         var file: File? by remember { mutableStateOf(null) }
 
-        SelectionContainer {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(16.dp)
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp)
+        ) {
+            Box(
+                modifier = Modifier.padding(end = 16.dp, top = 16.dp, bottom = 32.dp),
             ) {
-                Button(
-                    modifier = Modifier.padding(end = 16.dp, top = 16.dp, bottom = 32.dp),
-                    onClick = { isFileChooserOpen = true }
-                ) {
-                    Text("Select File")
-                }
-
                 when (file?.name) {
-                    null -> Text("")
-                    else -> Text("File: ${file!!.absolutePath} | ${file!!.name}")
+                    null -> Button( onClick = { isFileChooserOpen = true } ) { Text("Select File") }
+                    else -> Text("File: ${file!!.absolutePath}")
                 }
-
-                if (isFileChooserOpen) {
-                    SelectFileDialog{
-                        file = it
-                        isFileChooserOpen = false
-                    }
-                }
-
-                HexTable(file)
             }
+
+            if (isFileChooserOpen) {
+                SelectFileDialog{
+                    file = it
+                    isFileChooserOpen = false
+                }
+            }
+
+            HexHeaderRow()
+            HexTable(file)
         }
     }
 }

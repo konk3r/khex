@@ -3,6 +3,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.LocalTextStyle
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.ProvideTextStyle
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,31 +17,43 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
-data class HexRow(val rowNumber: Int, val bytes: List<Byte>)
+class HexRow constructor(val rowIndex: Int, val columnCount: Int)
 
 @Composable
 fun BodyRow(hexRow: HexRow) {
-    val byteState = hexRow.bytes.map { mutableStateOf(it) }
-    var colorState by remember { mutableStateOf(Color.Transparent) }
+    ProvideTextStyle(khexTypography.body2) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            RowNumberCell(hexRow.rowIndex)
 
-    Row(
-        modifier = Modifier.background(color = colorState),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically
-//            .pointerMoveFilter(
-//                onEnter = { colorState = Color.LightGray; false },
-//                onExit = { colorState = Color.Transparent; false }
-//            )
-    ) {
-        RowNumberCell(hexRow.rowNumber)
-        byteState.forEach { byteState -> HexCell(byteState = byteState) { byteState.value = it.toByte() } }
-        Box(modifier = Modifier.cellSize())
-        byteState.forEach { byteState ->
-            PreviewCell(byteState) {
-                if (it.length == 1) {
-                    byteState.value = it.first().code.toByte()
-                } else {
-                    byteState.value = 0.toByte()
+            (0 until hexRow.columnCount).forEach { columnIndex ->
+                val byteState: State<Byte> = hexRepo.getCellByteFlow(hexRow.rowIndex, columnIndex).collectAsState()
+                HexCell(byteState = byteState)
+
+                DisposableEffect(Pair(hexRow.rowIndex, columnIndex).toKey()) {
+                    onDispose { hexRepo.cleanupCellByteFlow(hexRow.rowIndex, columnIndex) }
+                }
+            }
+
+            Box(modifier = Modifier.cellSize())
+
+            (0 until hexRow.columnCount).forEach { columnIndex ->
+
+                val byteState: State<Byte> = hexRepo.getCellByteFlow(hexRow.rowIndex, columnIndex).collectAsState()
+
+                PreviewCell(byteState) { incomingString ->
+                    if (incomingString.length == 1) {
+                        val byteValue = incomingString.first().code.toByte()
+                        hexRepo.update(byteValue, rowIndex = hexRow.rowIndex, columnIndex = columnIndex)
+                    } else {
+                        hexRepo.update(0.toByte(), rowIndex = hexRow.rowIndex, columnIndex = columnIndex)
+                    }
+                }
+
+                DisposableEffect(Pair(hexRow.rowIndex, columnIndex).toKey()) {
+                    onDispose { hexRepo.cleanupCellByteFlow(hexRow.rowIndex, columnIndex) }
                 }
             }
         }
@@ -68,7 +82,7 @@ fun PreviewHeaderCell(text: String) {
 
 @Composable
 fun RowNumberCell(rowNumber: Int) {
-    val hexValue = "%08x".format(rowNumber)
+    val hexValue = "0x%08x".format(rowNumber)
     SelectionContainer {
         Text(
             text = hexValue,
@@ -79,7 +93,7 @@ fun RowNumberCell(rowNumber: Int) {
 }
 
 @Composable
-fun HexCell(byteState: State<Byte>, onTextChanged: (String) -> Unit) {
+fun HexCell(byteState: State<Byte>) {
     val byte by remember { byteState }
     val hexValue by derivedStateOf { "%02x".format(byte) }
     SelectionContainer {

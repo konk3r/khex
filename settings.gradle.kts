@@ -6,5 +6,5 @@ pluginManagement {
     }
     
 }
-rootProject.name = "untitled1"
+rootProject.name = "khex-edit"
 

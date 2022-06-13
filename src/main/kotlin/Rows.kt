@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 class HexRow constructor(val rowIndex: Int, val columnCount: Int)
 
 @Composable
-fun BodyRow(hexRow: HexRow) {
+fun BodyRow(hexRepo: HexRepository, hexRow: HexRow) {
     ProvideTextStyle(khexTypography.body2) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -40,7 +40,6 @@ fun BodyRow(hexRow: HexRow) {
             Box(modifier = Modifier.cellSize())
 
             (0 until hexRow.columnCount).forEach { columnIndex ->
-
                 val byteState: State<Byte> = hexRepo.getCellByteFlow(hexRow.rowIndex, columnIndex).collectAsState()
 
                 PreviewCell(byteState) { incomingString ->

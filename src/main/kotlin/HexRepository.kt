@@ -26,26 +26,34 @@ class HexRepository private constructor(private val byteArray: ByteArray) {
     private val _searchResultFlow: MutableStateFlow<Pair<Int, Int>?> = MutableStateFlow(null)
     val searchResultFlow: StateFlow<Pair<Int, Int>?> = _searchResultFlow
 
-    fun searchForChar(search: String) {
-        if (search.isEmpty()) {
-            _searchResultFlow.value = null
-            return
-        }
+    fun search(searchString: String) {
+        val searchBytes = searchString.map { it.code.toByte() }
+        val firstByte = searchBytes.firstOrNull() ?: return clearSearch()
 
-        val searchChar = search.first()
-        var index = 0
-        return run search@ {
-            byteArray.forEach {
-                if (it == searchChar.code.toByte()) {
-                    val rowIndex = index / 16
-                    val columnIndex = index % 16
-                    _searchResultFlow.value = Pair(rowIndex, columnIndex)
-                    return@search
+        byteSearch@ for (indexedByte in byteArray.withIndex()) {
+            val byte = indexedByte.value
+            val index = indexedByte.index
+
+            val lastArrayIndex = byteArray.size - 1
+            if (index + searchString.length > lastArrayIndex) break@byteSearch
+
+            if (byte == firstByte) {
+                for (byteStringIndex in (1 until searchString.length)) {
+                    val bytesAreNotEqual = byteArray[index + byteStringIndex] != searchBytes[byteStringIndex]
+                    if (bytesAreNotEqual) continue@byteSearch
                 }
-                index++
+
+                val rowIndex = index / 16
+                val columnIndex = index % 16
+                _searchResultFlow.value = Pair(rowIndex, columnIndex)
+                return
             }
-            _searchResultFlow.value = null
         }
+        _searchResultFlow.value = null
+    }
+
+    private fun clearSearch() {
+        _searchResultFlow.value = null
     }
 
     fun update(byteValue: Byte, rowIndex: Int, columnIndex: Int) {

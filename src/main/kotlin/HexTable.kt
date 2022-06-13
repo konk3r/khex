@@ -6,11 +6,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.*
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.launch
+import java.lang.Integer.max
 
 
 @Composable
@@ -32,15 +37,25 @@ fun HexHeaderRow() {
 fun HexTable(repo: HexRepository) {
     val hexRowState = repo.hexRowsFlow.collectAsState()
     val hexRows by remember { hexRowState }
+    val listCoroutineScope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
+
+    listCoroutineScope.launch {
+        repo.searchResultFlow.filterNotNull().collectLatest {
+            val paddedIndex = max(it.first - 1, 1)
+            listState.scrollToItem(paddedIndex)
+        }
+    }
 
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         items(
             items = hexRows
         ) { row ->
-            BodyRow(row)
+            BodyRow(repo, row)
         }
     }
 }

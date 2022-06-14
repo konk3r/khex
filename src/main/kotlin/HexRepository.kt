@@ -61,7 +61,7 @@ class HexRepository private constructor(
         _searchResultFlow.value = null
     }
 
-    fun updateWithTableConversion(charValue: Char, rowIndex: Int, columnIndex: Int) {
+    @Synchronized fun updateWithTableConversion(charValue: Char, rowIndex: Int, columnIndex: Int) {
         val byteValue = thingyTable.mapToByte(charValue)
         val index = rowIndex * 16 + columnIndex
         val cellByteFlow = cellByteFlows[Pair(rowIndex, columnIndex).toKey()]
@@ -70,7 +70,7 @@ class HexRepository private constructor(
         if (cellByteFlow != null) cellByteFlow.value = byteValue
     }
 
-    fun getCellByteFlow(rowIndex: Int, columnIndex: Int): StateFlow<Byte> {
+    @Synchronized fun getCellByteFlow(rowIndex: Int, columnIndex: Int): StateFlow<Byte> {
         val key = Pair(rowIndex, columnIndex).toKey()
         when (val referenceCount = cellByteFlowReferenceCount[key]) {
             null -> cellByteFlowReferenceCount[key] = 1
@@ -79,20 +79,21 @@ class HexRepository private constructor(
         return when (val cachedValue = cellByteFlows[key]) {
             null -> {
                 val value = byteArray[rowIndex * 16 + columnIndex]
+                val char = value.toInt().toChar()
                 cellByteFlows.insertAndReturn(key, value)
             }
             else -> cachedValue
         }
     }
 
-    fun getPreviewCellByteFlow(rowIndex: Int, columnIndex: Int): StateFlow<Char> {
+    @Synchronized fun getPreviewCellByteFlow(rowIndex: Int, columnIndex: Int): StateFlow<Char> {
         val cellByteFlow = getCellByteFlow(rowIndex, columnIndex);
         return cellByteFlow.map {
             thingyTable.mapToChar(it)
         }.stateIn(GlobalScope, SharingStarted.Eagerly, thingyTable.mapToChar(cellByteFlow.value))
     }
 
-    fun cleanupCellByteFlow(rowIndex: Int, columnIndex: Int) {
+    @Synchronized fun cleanupCellByteFlow(rowIndex: Int, columnIndex: Int) {
         val key = Pair(rowIndex, columnIndex).toKey()
         when (val previousReferenceCount = checkNotNull(cellByteFlowReferenceCount[key])) {
             1 -> {

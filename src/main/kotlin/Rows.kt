@@ -43,8 +43,8 @@ fun BodyRow(hexRepo: HexRepository, hexRow: HexRow) {
 
                 PreviewCell(byteState) { incomingString ->
                     if (incomingString.length == 1) {
-                        val byteValue = incomingString.first()
-                        hexRepo.updateWithTableConversion(byteValue, rowIndex = hexRow.rowIndex, columnIndex = columnIndex)
+                        val char = incomingString.first()
+                        hexRepo.updateWithTableConversion(char, rowIndex = hexRow.rowIndex, columnIndex = columnIndex)
                     } else {
                         hexRepo.updateWithTableConversion(0.toChar(), rowIndex = hexRow.rowIndex, columnIndex = columnIndex)
                     }
@@ -110,10 +110,6 @@ fun PreviewCell(charState: State<Char>, onTextChanged: (String) -> Unit) {
     val byteValue: TextFieldValue by derivedStateOf {
         val selectionRange = if (isSelected) TextRange(0, 1) else TextRange.Zero
         TextFieldValue(char.toString(), selection = selectionRange)
-//        when (val intValue = char.toInt()) {
-//            0 -> TextFieldValue("", selection = selectionRange)
-//            else ->
-//        }
     }
 
     BasicTextField(

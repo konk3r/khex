@@ -1,14 +1,15 @@
 // Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.SwingPanel
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
@@ -18,7 +19,6 @@ import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
 import java.io.File
 import javax.swing.JFileChooser
 import javax.swing.JPanel
@@ -56,80 +56,86 @@ fun App() {
         typography = khexTypography
     ) {
         var isSourceFileChooserOpen by remember { mutableStateOf(false) }
+        var searchText by remember { mutableStateOf(TextFieldValue("")) }
+        val state = searchResultFlow.collectAsState()
+        val searchResultValue by remember { state }
+        val fileTextState = hexFileNameFlow.collectAsState()
+        val loadFileText by remember {
+            mutableStateOf(
+                when (fileTextState.value.isNotEmpty()) {
+                    true -> "LOAD A DIFFERENT FILE"
+                    false -> "LOAD FILE"
+                }
+            )
+        }
 
-        Box(
-            modifier = Modifier.padding(top = 32.dp, start = 32.dp, end = 32.dp),
-        ) {
-            Row {
-                Column {
-                    Text("Hex table", style = MaterialTheme.typography.h6)
-                    Row {
-                        var searchText by remember { mutableStateOf(TextFieldValue("")) }
-                        val fileTextState = hexFileNameFlow.map {
-                            when (it.isNotBlank()) {
-                                true -> "Load a different file"
-                                false -> "Load file"
-                            }
-                        }.collectAsState("Load file")
+        Row {
+            Column(modifier = Modifier.padding(start = 32.dp, end = 32.dp, top = 8.dp)) {
+                Text("Hex table",
+                    style = MaterialTheme.typography.h3.copy(
+                        color = MaterialTheme.colors.primary,
+                    ),
+                    modifier = Modifier.padding(bottom = 16.dp))
+                Row {
 
-                        val fileText by remember { fileTextState }
+                    Column {
+                        if (hexFileNameFlow.value.isNotEmpty()) {
+                            Text(
+                                "File: ${hexFileNameFlow.value}",
+                                modifier = Modifier.padding(bottom = 2.dp),
+                                fontWeight = FontWeight.Bold,
+                            )
+                        } else {
+                            Text("File:",
+                                modifier = Modifier.padding(bottom = 2.dp),
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
 
-                        Column {
-                            Button(
-                                modifier = Modifier.padding(bottom = 8.dp),
-                                onClick = { isSourceFileChooserOpen = true }
-                            ) {
-                                Text(fileText, modifier = Modifier.padding())
-                            }
+                        Button(
+                            modifier = Modifier.padding(bottom = 8.dp),
+                            onClick = { isSourceFileChooserOpen = true }
+                        ) {
+                            Text(loadFileText, modifier = Modifier.padding())
+                        }
 
-                            if (hexFileNameFlow.value.isNotEmpty()) {
-                                Text("File: ${hexFileNameFlow.value}", modifier = Modifier.padding(bottom = 16.dp))
-
-                                Row {
-                                    TextField(
-                                        value = searchText,
-                                        label = { Text("Search") },
-                                        onValueChange = {
-                                            searchText = it
-                                            searchText(it.text)
-                                        },
-                                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
-                                        modifier = Modifier.padding(top = 16.dp, bottom = 16.dp, end = 16.dp)
-                                    )
-
-                                    val state = searchResultFlow.collectAsState()
-                                    val searchResultValue by remember { state }
-                                    if (searchResultValue != null) {
-                                        val searchTextValue by derivedStateOf { "Result: $searchResultValue" }
-                                        Text(searchTextValue)
-                                    }
+                        if (hexFileNameFlow.value.isNotEmpty()) {
+                            Row {
+                                TextField(
+                                    value = searchText,
+                                    label = { Text("Search") },
+                                    onValueChange = {
+                                        searchText = it
+                                        searchText(it.text)
+                                    },
+                                    textStyle = LocalTextStyle.current,
+                                    modifier = Modifier.padding(top = 16.dp, bottom = 16.dp, end = 16.dp)
+                                )
+                                if (searchResultValue != null) {
+                                    val searchTextValue by derivedStateOf { "Result: $searchResultValue" }
+                                    Text(searchTextValue)
                                 }
                             }
                         }
                     }
-
-                    if (isSourceFileChooserOpen) {
-                        SelectFileDialog { file ->
-                            hexFileNameFlow.value = file?.absolutePath ?: ""
-                            hexRepoFlow.value = HexRepository.parseFile(file, thingyTableFlow)
-                            isSourceFileChooserOpen = false
-                        }
-                    }
-
-                    val tableState = hexRepoFlow.collectAsState()
-                    val tableRepo by remember { tableState }
-
-                    HexHeaderRow()
-                    HexTable(tableRepo)
                 }
 
-                Box(
-                    modifier = Modifier.width(34.dp).padding(start = 16.dp, end = 16.dp).fillMaxHeight()
-                        .background(color = Color.DarkGray)
-                )
+                if (isSourceFileChooserOpen) {
+                    SelectFileDialog { file ->
+                        hexFileNameFlow.value = file?.name ?: ""
+                        hexRepoFlow.value = HexRepository.parseFile(file, thingyTableFlow)
+                        isSourceFileChooserOpen = false
+                    }
+                }
 
-                ThingyTableDisplay(thingyTableFlow)
+                val tableState = hexRepoFlow.collectAsState()
+                val tableRepo by remember { tableState }
+
+                HexHeaderRow()
+                HexTable(tableRepo)
             }
+
+            ThingyTableDisplay(thingyTableFlow)
         }
     }
 }
@@ -152,7 +158,7 @@ fun SelectFileDialog(fileExtension: FileExtensionInfo? = null, onFileSelected: (
     )
 }
 
-fun searchText(searchPhrase: String) {
+private fun searchText(searchPhrase: String) {
     hexRepoFlow.value.search(searchPhrase)
 }
 

@@ -1,9 +1,18 @@
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
 
 class ThingyTable private constructor(private val charMap: Map<Byte, Char>, private val byteMap: Map<Char, Byte>) {
 
-    val hexMapList: List<Pair<String, Char>> = charMap.mapKeys { it.key.toHex() }.toList()
+    private val _hexMapListFlow: MutableStateFlow<List<Pair<String, Char>>> = MutableStateFlow(
+        charMap.toSortedMap()
+            .mapKeys { it.key.toHex() }
+            .toList()
+    )
+
+    val hexMapListFlow: StateFlow<List<Pair<String, Char>>> = _hexMapListFlow
+
     fun mapToChar(byte: Byte): Char = when (charMap.contains(byte)) {
         true -> charMap[byte]!!
         else -> byte.toInt().toChar()

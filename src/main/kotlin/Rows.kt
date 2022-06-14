@@ -94,13 +94,11 @@ fun RowNumberCell(rowNumber: Int) {
 fun HexCell(byteState: State<Byte>) {
     val byte by remember { byteState }
     val hexValue by derivedStateOf { byte.toHex() }
-    SelectionContainer {
-        Text(
-            text = hexValue,
-            modifier = Modifier.cellSize().background(color = Color.LightGray),
-            textAlign = TextAlign.Center,
-        )
-    }
+    Text(
+        text = hexValue,
+        modifier = Modifier.cellSize().background(color = Color.LightGray),
+        textAlign = TextAlign.Center,
+    )
 }
 
 internal fun Byte.toHex() = "%02x".format(this)

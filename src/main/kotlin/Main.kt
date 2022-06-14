@@ -2,10 +2,8 @@
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.*
 import androidx.compose.runtime.*
-import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.SwingPanel
 import androidx.compose.ui.graphics.Color
@@ -36,7 +34,6 @@ private var hexRepoFlow: MutableStateFlow<HexRepository> = MutableStateFlow(
 private val searchResultFlow: StateFlow<Pair<Int, Int>?> get() = hexRepoFlow.value.searchResultFlow
 
 private val hexFileNameFlow = MutableStateFlow("")
-private val tableFileNameFlow = MutableStateFlow("")
 
 fun main() = application {
     Window(
@@ -88,25 +85,27 @@ fun App() {
                             if (hexFileNameFlow.value.isNotEmpty()) {
                                 Text("File: ${hexFileNameFlow.value}", modifier = Modifier.padding(bottom = 16.dp))
 
-                                TextField(
-                                    value = searchText,
-                                    label = { Text("Search") },
-                                    onValueChange = {
-                                        searchText = it
-                                        searchText(it.text)
-                                    },
-                                    textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
-                                    modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
-                                )
+                                Row {
+                                    TextField(
+                                        value = searchText,
+                                        label = { Text("Search") },
+                                        onValueChange = {
+                                            searchText = it
+                                            searchText(it.text)
+                                        },
+                                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
+                                        modifier = Modifier.padding(top = 16.dp, bottom = 16.dp, end = 16.dp)
+                                    )
+
+                                    val state = searchResultFlow.collectAsState()
+                                    val searchResultValue by remember { state }
+                                    if (searchResultValue != null) {
+                                        val searchTextValue by derivedStateOf { "Result: $searchResultValue" }
+                                        Text(searchTextValue)
+                                    }
+                                }
                             }
                         }
-                    }
-
-                    val state = searchResultFlow.collectAsState()
-                    val searchResultValue by remember { state }
-                    if (searchResultValue != null) {
-                        val searchTextValue by derivedStateOf { "Result: $searchResultValue" }
-                        Text(searchTextValue)
                     }
 
                     if (isSourceFileChooserOpen) {
@@ -123,56 +122,16 @@ fun App() {
                     HexHeaderRow()
                     HexTable(tableRepo)
                 }
-                val thingyTableState = thingyTableFlow.collectAsState()
-                val thingyTable by remember { thingyTableState }
 
                 Box(
                     modifier = Modifier.width(34.dp).padding(start = 16.dp, end = 16.dp).fillMaxHeight()
                         .background(color = Color.DarkGray)
                 )
 
-                ThingyTableDisplay(thingyTable)
+                ThingyTableDisplay(thingyTableFlow)
             }
         }
     }
-}
-
-@Composable
-fun ThingyTableDisplay(thingyTable: ThingyTable) {
-    var isTableFileChooserOpen by remember { mutableStateOf(false) }
-
-    Column {
-        Text("Conversion table", style = MaterialTheme.typography.h6)
-
-        if (isTableFileChooserOpen) {
-            SelectFileDialog(
-                fileExtension = FileExtensionInfo(
-                    description = "Thingy table file",
-                    extension = "tbl"
-                )
-            ) { file ->
-                tableFileNameFlow.value = file?.absolutePath ?: ""
-                file?.let {thingyTableFlow.value = ThingyTable.parseFromFile(it) }
-                isTableFileChooserOpen = false
-            }
-        }
-
-        Button(onClick = { isTableFileChooserOpen = true }) { Text("Select thingy table file (.tbl)") }
-
-        if (tableFileNameFlow.value.isNotEmpty()) {
-            Text("File: ${tableFileNameFlow.value}", modifier = Modifier.padding(bottom = 16.dp))
-        }
-
-        LazyColumn {
-            items(items = thingyTable.hexMapList) { thingyRow ->
-                Text("0x${thingyRow.first} = ${thingyRow.second}", modifier = Modifier.fillMaxSize())
-            }
-        }
-    }
-}
-
-fun searchText(searchPhrase: String) {
-    hexRepoFlow.value.search(searchPhrase)
 }
 
 @Composable
@@ -191,6 +150,10 @@ fun SelectFileDialog(fileExtension: FileExtensionInfo? = null, onFileSelected: (
             }
         }
     )
+}
+
+fun searchText(searchPhrase: String) {
+    hexRepoFlow.value.search(searchPhrase)
 }
 
 class FileExtensionInfo(val description: String, val extension: String)

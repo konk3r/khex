@@ -32,7 +32,7 @@ class HexRepository private constructor(
     val searchResultFlow: StateFlow<Pair<Int, Int>?> = _searchResultFlow
 
     fun search(searchString: String) {
-        val searchBytes = searchString.map { it.code.toByte() }
+        val searchBytes = searchString.map { thingyTable.mapToByte(it) }
         val firstByte = searchBytes.firstOrNull() ?: return clearSearch()
 
         byteSearch@ for (indexedByte in byteArray.withIndex()) {

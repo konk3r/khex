@@ -1,10 +1,15 @@
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import androidx.compose.ui.text.input.TextFieldValue
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.*
 import java.io.File
 
-class HexRepository private constructor(private val byteArray: ByteArray) {
+class HexRepository private constructor(
+    private val byteArray: ByteArray,
+    private val thingyTableFlow: MutableStateFlow<ThingyTable>
+) {
 
     val hexRowsFlow: StateFlow<List<HexRow>>
+    val thingyTable: ThingyTable get() = thingyTableFlow.value
 
     init {
         val list: MutableList<HexRow> = ArrayList()
@@ -79,6 +84,13 @@ class HexRepository private constructor(private val byteArray: ByteArray) {
         }
     }
 
+    fun getPreviewCellByteFlow(rowIndex: Int, columnIndex: Int): StateFlow<Char> {
+        val cellByteFlow = getCellByteFlow(rowIndex, columnIndex);
+        return cellByteFlow.map {
+            thingyTable.mapToChar(it)
+        }.stateIn(GlobalScope, SharingStarted.Eagerly, thingyTable.mapToChar(cellByteFlow.value))
+    }
+
     fun cleanupCellByteFlow(rowIndex: Int, columnIndex: Int) {
         val key = Pair(rowIndex, columnIndex).toKey()
         when (val previousReferenceCount = checkNotNull(cellByteFlowReferenceCount[key])) {
@@ -96,8 +108,8 @@ class HexRepository private constructor(private val byteArray: ByteArray) {
     }
 
     companion object {
-        fun parseFile(file: File?): HexRepository {
-            return HexRepository(file?.readBytes() ?: TEST_ROW)
+        fun parseFile(file: File?, thingyTableFlow: MutableStateFlow<ThingyTable>): HexRepository {
+            return HexRepository(file?.readBytes() ?: TEST_ROW, thingyTableFlow)
         }
 
         private val TEST_ROW: ByteArray = byteArrayOf(

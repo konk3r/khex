@@ -1,8 +1,10 @@
 // Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.SwingPanel
 import androidx.compose.ui.text.TextStyle
@@ -16,20 +18,26 @@ import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import java.io.File
 import javax.swing.JFileChooser
 import javax.swing.JPanel
+import javax.swing.filechooser.FileNameExtensionFilter
 
 lateinit var khexTypography: Typography
 
-private var hexRepoFlow: MutableStateFlow<HexRepository> = MutableStateFlow(HexRepository.parseFile(null))
+private var thingyTableFlow: MutableStateFlow<ThingyTable> = MutableStateFlow(ThingyTable.emptyTable)
+private var hexRepoFlow: MutableStateFlow<HexRepository> = MutableStateFlow(
+    HexRepository.parseFile(null, thingyTableFlow)
+)
+
 private val searchResultFlow: StateFlow<Pair<Int, Int>?> get() = hexRepoFlow.value.searchResultFlow
 
 private val fileNameFlow = MutableStateFlow("")
 
 fun main() = application {
     Window(
-        state = WindowState(size = DpSize(1100.dp, 500.dp)),
+        state = WindowState(size = DpSize(1400.dp, 500.dp)),
         title = "Khex editor",
         onCloseRequest = ::exitApplication,
     ) {
@@ -47,7 +55,7 @@ fun App() {
     MaterialTheme(
         typography = khexTypography
     ) {
-        var isFileChooserOpen by remember { mutableStateOf(false) }
+        var isSourceFileChooserOpen by remember { mutableStateOf(false) }
 
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp)
@@ -57,49 +65,100 @@ fun App() {
             ) {
                 Row {
                     var searchText by remember { mutableStateOf(TextFieldValue("")) }
+                    val fileTextState = fileNameFlow.map{
+                        when (it.isNotBlank()) {
+                            true -> "Load a different file"
+                            false -> "Load file"
+                        }
+                    }.collectAsState("Load file")
 
-                    when (fileNameFlow.value.isEmpty()) {
-                        true -> Button(onClick = { isFileChooserOpen = true }) { Text("Select File") }
-                        else -> {
-                            Column {
-                                Text("File: ${fileNameFlow.value}")
+                    val fileText by remember { fileTextState }
 
-                                TextField(
-                                    value = searchText,
-                                    label = { Text("Search") },
-                                    onValueChange = {
-                                        searchText = it
-                                        searchText(it.text)
-                                    },
-                                    textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
-                                    modifier = Modifier.padding(top = 16.dp)
-                                )
-                            }
+                    Column {
+                        Button(
+                            modifier = Modifier.padding(bottom = 8.dp),
+                            onClick = { isSourceFileChooserOpen = true }
+                        ) {
+                            Text(fileText, modifier = Modifier.padding())
+                        }
+
+                        if (fileNameFlow.value.isNotEmpty()) {
+                            Text("File: ${fileNameFlow.value}", modifier = Modifier.padding(bottom = 16.dp))
+
+                            TextField(
+                                value = searchText,
+                                label = { Text("Search") },
+                                onValueChange = {
+                                    searchText = it
+                                    searchText(it.text)
+                                },
+                                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
+                                modifier = Modifier.padding(top = 16.dp)
+                            )
                         }
                     }
+                }
 
-                    val state = searchResultFlow.collectAsState()
-                    val searchResultValue by remember { state }
-                    if (searchResultValue != null) {
-                        val searchTextValue by derivedStateOf { "Result: $searchResultValue" }
-                        Text(searchTextValue)
-                    }
+                val state = searchResultFlow.collectAsState()
+                val searchResultValue by remember { state }
+                if (searchResultValue != null) {
+                    val searchTextValue by derivedStateOf { "Result: $searchResultValue" }
+                    Text(searchTextValue)
                 }
             }
 
-            if (isFileChooserOpen) {
+            if (isSourceFileChooserOpen) {
                 SelectFileDialog { file ->
                     fileNameFlow.value = file?.absolutePath ?: ""
-                    hexRepoFlow.value = HexRepository.parseFile(file)
-                    isFileChooserOpen = false
+                    hexRepoFlow.value = HexRepository.parseFile(file, thingyTableFlow)
+                    isSourceFileChooserOpen = false
                 }
             }
 
             val tableState = hexRepoFlow.collectAsState()
             val tableRepo by remember { tableState }
+            val thingyTableState = thingyTableFlow.collectAsState()
+            val thingyTable by remember { thingyTableState }
 
             HexHeaderRow()
-            HexTable(tableRepo)
+            Row {
+                HexTable(tableRepo)
+                ThingyTableDisplay(thingyTable)
+            }
+        }
+    }
+}
+
+@Composable
+fun ThingyTableDisplay(thingyTable: ThingyTable) {
+    var isTableFileChooserOpen by remember { mutableStateOf(false) }
+
+    Column {
+        Row {
+            Text("Thingy Table")
+
+            if (isTableFileChooserOpen) {
+                SelectFileDialog(
+                    fileExtension = FileExtensionInfo(
+                        description = "Thingy table file",
+                        extension = "tbl"
+                    )
+                ) { file ->
+                    file?.let { thingyTableFlow.value = ThingyTable.parseFromFile(it) }
+                    isTableFileChooserOpen = false
+                }
+            }
+
+            Button(
+                modifier = Modifier.padding(start = 16.dp),
+                onClick = { isTableFileChooserOpen = true }
+            ) { Text("Select thingy table file (.tbl)") }
+        }
+
+        LazyColumn {
+            items(items = thingyTable.charMap.toList()) { thingyRow ->
+                Text("0x${thingyRow.first.toHex()} = ${thingyRow.second}")
+            }
         }
     }
 }
@@ -109,11 +168,13 @@ fun searchText(searchPhrase: String) {
 }
 
 @Composable
-fun SelectFileDialog(onFileSelected: (File?) -> Unit) {
+fun SelectFileDialog(fileExtension: FileExtensionInfo? = null, onFileSelected: (File?) -> Unit) {
     SwingPanel(
         factory = {
             JPanel().apply {
                 val chooser = JFileChooser("""C:\Users\konk3\OneDrive\projects\rpi-bs zelda""")
+                fileExtension?.let { chooser.fileFilter = FileNameExtensionFilter(it.description, it.extension) }
+
                 val file = when (chooser.showOpenDialog(null)) {
                     JFileChooser.APPROVE_OPTION -> chooser.selectedFile
                     else -> null
@@ -123,3 +184,5 @@ fun SelectFileDialog(onFileSelected: (File?) -> Unit) {
         }
     )
 }
+
+class FileExtensionInfo(val description: String, val extension: String)

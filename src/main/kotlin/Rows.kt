@@ -3,7 +3,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.ProvideTextStyle
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
@@ -40,7 +39,7 @@ fun BodyRow(hexRepo: HexRepository, hexRow: HexRow) {
             Box(modifier = Modifier.cellSize())
 
             (0 until hexRow.columnCount).forEach { columnIndex ->
-                val byteState: State<Byte> = hexRepo.getCellByteFlow(hexRow.rowIndex, columnIndex).collectAsState()
+                val byteState: State<Char> = hexRepo.getPreviewCellByteFlow(hexRow.rowIndex, columnIndex).collectAsState()
 
                 PreviewCell(byteState) { incomingString ->
                     if (incomingString.length == 1) {
@@ -94,7 +93,7 @@ fun RowNumberCell(rowNumber: Int) {
 @Composable
 fun HexCell(byteState: State<Byte>) {
     val byte by remember { byteState }
-    val hexValue by derivedStateOf { "%02x".format(byte) }
+    val hexValue by derivedStateOf { byte.toHex() }
     SelectionContainer {
         Text(
             text = hexValue,
@@ -104,16 +103,19 @@ fun HexCell(byteState: State<Byte>) {
     }
 }
 
+internal fun Byte.toHex() = "%02x".format(this)
+
 @Composable
-fun PreviewCell(byteState: State<Byte>, onTextChanged: (String) -> Unit) {
-    val byte by remember { byteState }
+fun PreviewCell(charState: State<Char>, onTextChanged: (String) -> Unit) {
+    val char by remember { charState }
     var isSelected by remember { mutableStateOf(false) }
     val byteValue: TextFieldValue by derivedStateOf {
         val selectionRange = if (isSelected) TextRange(0, 1) else TextRange.Zero
-        when (val intValue = byte.toInt()) {
-            0 -> TextFieldValue("", selection = selectionRange)
-            else -> TextFieldValue(intValue.toChar().toString(), selection = selectionRange)
-        }
+        TextFieldValue(char.toString(), selection = selectionRange)
+//        when (val intValue = char.toInt()) {
+//            0 -> TextFieldValue("", selection = selectionRange)
+//            else ->
+//        }
     }
 
     BasicTextField(

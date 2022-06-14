@@ -49,7 +49,6 @@ fun HexTable(repo: HexRepository) {
 
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         items(

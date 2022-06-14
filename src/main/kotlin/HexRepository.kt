@@ -61,7 +61,8 @@ class HexRepository private constructor(
         _searchResultFlow.value = null
     }
 
-    fun update(byteValue: Byte, rowIndex: Int, columnIndex: Int) {
+    fun updateWithTableConversion(charValue: Char, rowIndex: Int, columnIndex: Int) {
+        val byteValue = thingyTable.mapToByte(charValue)
         val index = rowIndex * 16 + columnIndex
         val cellByteFlow = cellByteFlows[Pair(rowIndex, columnIndex).toKey()]
 

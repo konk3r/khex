@@ -40,7 +40,7 @@ private val tableFileNameFlow = MutableStateFlow("")
 
 fun main() = application {
     Window(
-        state = WindowState(size = DpSize(1400.dp, 500.dp)),
+        state = WindowState(size = DpSize(1400.dp, 800.dp)),
         title = "Khex editor",
         onCloseRequest = ::exitApplication,
     ) {
@@ -61,7 +61,7 @@ fun App() {
         var isSourceFileChooserOpen by remember { mutableStateOf(false) }
 
         Box(
-            modifier = Modifier.padding(32.dp),
+            modifier = Modifier.padding(top = 32.dp, start = 32.dp, end = 32.dp),
         ) {
             Row {
                 Column {
@@ -164,8 +164,8 @@ fun ThingyTableDisplay(thingyTable: ThingyTable) {
         }
 
         LazyColumn {
-            items(items = thingyTable.charMap.toList()) { thingyRow ->
-                Text("0x${thingyRow.first.toHex()} = ${thingyRow.second}", modifier = Modifier.fillMaxSize())
+            items(items = thingyTable.hexMapList) { thingyRow ->
+                Text("0x${thingyRow.first} = ${thingyRow.second}", modifier = Modifier.fillMaxSize())
             }
         }
     }

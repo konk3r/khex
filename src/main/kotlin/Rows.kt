@@ -43,10 +43,10 @@ fun BodyRow(hexRepo: HexRepository, hexRow: HexRow) {
 
                 PreviewCell(byteState) { incomingString ->
                     if (incomingString.length == 1) {
-                        val byteValue = incomingString.first().code.toByte()
-                        hexRepo.update(byteValue, rowIndex = hexRow.rowIndex, columnIndex = columnIndex)
+                        val byteValue = incomingString.first()
+                        hexRepo.updateWithTableConversion(byteValue, rowIndex = hexRow.rowIndex, columnIndex = columnIndex)
                     } else {
-                        hexRepo.update(0.toByte(), rowIndex = hexRow.rowIndex, columnIndex = columnIndex)
+                        hexRepo.updateWithTableConversion(0.toChar(), rowIndex = hexRow.rowIndex, columnIndex = columnIndex)
                     }
                 }
 

@@ -1,11 +1,17 @@
 import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
 
-class ThingyTable private constructor(val charMap: Map<Byte, Char>, val byteMap: Map<Char, Byte>) {
+class ThingyTable private constructor(private val charMap: Map<Byte, Char>, private val byteMap: Map<Char, Byte>) {
 
+    val hexMapList: List<Pair<String, Char>> = charMap.mapKeys { it.key.toHex() }.toList()
     fun mapToChar(byte: Byte): Char = when (charMap.contains(byte)) {
         true -> charMap[byte]!!
         else -> byte.toInt().toChar()
+    }
+
+    fun mapToByte(char: Char): Byte = when (byteMap.contains(char)) {
+        true -> byteMap[char]!!
+        else -> char.code.toByte()
     }
 
     companion object {

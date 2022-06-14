@@ -35,7 +35,8 @@ private var hexRepoFlow: MutableStateFlow<HexRepository> = MutableStateFlow(
 
 private val searchResultFlow: StateFlow<Pair<Int, Int>?> get() = hexRepoFlow.value.searchResultFlow
 
-private val fileNameFlow = MutableStateFlow("")
+private val hexFileNameFlow = MutableStateFlow("")
+private val tableFileNameFlow = MutableStateFlow("")
 
 fun main() = application {
     Window(
@@ -67,7 +68,7 @@ fun App() {
                     Text("Hex table", style = MaterialTheme.typography.h6)
                     Row {
                         var searchText by remember { mutableStateOf(TextFieldValue("")) }
-                        val fileTextState = fileNameFlow.map {
+                        val fileTextState = hexFileNameFlow.map {
                             when (it.isNotBlank()) {
                                 true -> "Load a different file"
                                 false -> "Load file"
@@ -84,8 +85,8 @@ fun App() {
                                 Text(fileText, modifier = Modifier.padding())
                             }
 
-                            if (fileNameFlow.value.isNotEmpty()) {
-                                Text("File: ${fileNameFlow.value}", modifier = Modifier.padding(bottom = 16.dp))
+                            if (hexFileNameFlow.value.isNotEmpty()) {
+                                Text("File: ${hexFileNameFlow.value}", modifier = Modifier.padding(bottom = 16.dp))
 
                                 TextField(
                                     value = searchText,
@@ -95,7 +96,7 @@ fun App() {
                                         searchText(it.text)
                                     },
                                     textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
-                                    modifier = Modifier.padding(top = 16.dp)
+                                    modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
                                 )
                             }
                         }
@@ -110,7 +111,7 @@ fun App() {
 
                     if (isSourceFileChooserOpen) {
                         SelectFileDialog { file ->
-                            fileNameFlow.value = file?.absolutePath ?: ""
+                            hexFileNameFlow.value = file?.absolutePath ?: ""
                             hexRepoFlow.value = HexRepository.parseFile(file, thingyTableFlow)
                             isSourceFileChooserOpen = false
                         }
@@ -150,16 +151,21 @@ fun ThingyTableDisplay(thingyTable: ThingyTable) {
                     extension = "tbl"
                 )
             ) { file ->
-                file?.let { thingyTableFlow.value = ThingyTable.parseFromFile(it) }
+                tableFileNameFlow.value = file?.absolutePath ?: ""
+                file?.let {thingyTableFlow.value = ThingyTable.parseFromFile(it) }
                 isTableFileChooserOpen = false
             }
         }
 
         Button(onClick = { isTableFileChooserOpen = true }) { Text("Select thingy table file (.tbl)") }
 
+        if (tableFileNameFlow.value.isNotEmpty()) {
+            Text("File: ${tableFileNameFlow.value}", modifier = Modifier.padding(bottom = 16.dp))
+        }
+
         LazyColumn {
             items(items = thingyTable.charMap.toList()) { thingyRow ->
-                Text("0x${thingyRow.first.toHex()} = ${thingyRow.second}")
+                Text("0x${thingyRow.first.toHex()} = ${thingyRow.second}", modifier = Modifier.fillMaxSize())
             }
         }
     }

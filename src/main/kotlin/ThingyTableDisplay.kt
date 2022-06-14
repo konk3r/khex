@@ -49,14 +49,14 @@ fun ThingyTableDisplay(thingyTableFlow: MutableStateFlow<ThingyTable>) {
 
             when (isFileTableSelected) {
                 true -> FileContent(thingyTableFlow)
-                false -> GenerateContent(thingyTableFlow)
+                false -> GenerateContent()
             }
         }
     }
-}
+} // bfe943 | 15bb0790
 
 @Composable
-fun GenerateContent(thingyTableFlow: MutableStateFlow<ThingyTable>) {
+fun GenerateContent() {
     val state = searchResultFlow.collectAsState()
     val searchResultValue by remember { state }
     var matchTextFieldValue by remember { mutableStateOf(TextFieldValue("")) }

@@ -24,8 +24,10 @@ class ThingyTable private constructor(private val charMap: Map<Byte, Char>, priv
     }
 
     companion object {
+
+        private val HEX_REGEX = """^(0x|xX)?[a-fA-F\d]{2}$""".toRegex()
+
         val emptyTable = ThingyTable(emptyMap(), emptyMap())
-        val HEX_REGEX = """^(0x|xX)?[a-fA-F\d]{2}$""".toRegex()
 
         fun parseFromFile(file: File): ThingyTable {
             val byteMap = HashMap<Char, Byte>()

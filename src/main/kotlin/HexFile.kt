@@ -1,28 +1,28 @@
-import androidx.compose.ui.text.input.TextFieldValue
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.*
 import java.io.File
 
-class HexRepository private constructor(
+class HexFile private constructor(
     private val byteArray: ByteArray,
     private val thingyTableFlow: MutableStateFlow<ThingyTable>
 ) {
 
-    val hexRowsFlow: StateFlow<List<HexRow>>
     val thingyTable: ThingyTable get() = thingyTableFlow.value
 
+    val lineIndexes: List<HexRowIndexes>
+
     init {
-        val list: MutableList<HexRow> = ArrayList()
+        val list: MutableList<HexRowIndexes> = ArrayList()
         val fullRowCount: Int = byteArray.size / 16
-        val overflowRowIndex: Int = fullRowCount + 1
+        val overflowRowIndex: Int = fullRowCount // the count is always index + 1, so this is fullRowFinalIndex + 1
         (0 until fullRowCount).forEach { index ->
-            list.add(HexRow(rowIndex = index, columnCount = 16))
+            list.add(HexRowIndexes(rowIndex = index, columnCount = 16))
         }
         when (val overflow = byteArray.size % 16) {
             0 -> {}
-            else -> list.add(HexRow(rowIndex = overflowRowIndex, columnCount = overflow))
+            else -> list.add(HexRowIndexes(rowIndex = overflowRowIndex, columnCount = overflow))
         }
-        hexRowsFlow = MutableStateFlow(list)
+        lineIndexes = list
     }
 
     private val cellByteFlows: MutableMap<String, MutableStateFlow<Byte>> = HashMap()
@@ -110,8 +110,8 @@ class HexRepository private constructor(
     }
 
     companion object {
-        fun parseFile(file: File?, thingyTableFlow: MutableStateFlow<ThingyTable>): HexRepository {
-            return HexRepository(file?.readBytes() ?: TEST_ROW, thingyTableFlow)
+        fun parseFile(file: File?, thingyTableFlow: MutableStateFlow<ThingyTable>): HexFile {
+            return HexFile(file?.readBytes() ?: TEST_ROW, thingyTableFlow)
         }
 
         private val TEST_ROW: ByteArray = byteArrayOf(
@@ -134,5 +134,7 @@ class HexRepository private constructor(
         )
     }
 }
+
+class HexRowIndexes constructor(val rowIndex: Int, val columnCount: Int)
 
 fun <A, B> Pair<A, B>.toKey(): String = "${first}/$second"

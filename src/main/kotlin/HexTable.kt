@@ -8,8 +8,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.lang.Integer.max
 
@@ -30,11 +29,10 @@ fun HexHeaderRow() {
 }
 
 @Composable
-fun HexTable(repo: HexRepository) {
-    val hexRowState = repo.hexRowsFlow.collectAsState()
-    val hexRows by remember { hexRowState }
+fun HexTable(repo: HexFile) {
     val listCoroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+    val hexRows = repo.lineIndexes
 
     listCoroutineScope.launch {
         repo.searchResultFlow.filterNotNull().collectLatest {

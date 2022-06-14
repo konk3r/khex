@@ -16,10 +16,8 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
-class HexRow constructor(val rowIndex: Int, val columnCount: Int)
-
 @Composable
-fun BodyRow(hexRepo: HexRepository, hexRow: HexRow) {
+fun BodyRow(hexRepo: HexFile, hexRow: HexRowIndexes) {
     ProvideTextStyle(khexTypography.body2) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),

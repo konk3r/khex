@@ -1,6 +1,6 @@
 package com.casadetasha.tools.khex.file
 
-import com.casadetasha.tools.khex.toHex
+import com.casadetasha.tools.khex.ui.toHex
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.io.File

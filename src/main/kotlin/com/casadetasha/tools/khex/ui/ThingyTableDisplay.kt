@@ -1,4 +1,4 @@
-package com.casadetasha.tools.khex
+package com.casadetasha.tools.khex.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -13,7 +13,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import com.casadetasha.tools.khex.file.FileExtensionInfo
 import com.casadetasha.tools.khex.file.ThingyTableFile
+import com.casadetasha.tools.khex.khexTypography
 import kotlinx.coroutines.flow.MutableStateFlow
 
 private val tableFileNameFlow = MutableStateFlow("")
@@ -55,7 +57,7 @@ fun ThingyTableDisplay(thingyTableFileFlow: MutableStateFlow<ThingyTableFile>) {
             }
         }
     }
-} // bfe943 | 15bb0790
+}
 
 @Composable
 fun GenerateContent() {

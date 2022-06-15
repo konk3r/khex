@@ -5,7 +5,7 @@ import java.io.File
 
 class HexFile private constructor(
     private val byteArray: ByteArray,
-    private val thingyTableFileFlow: MutableStateFlow<ThingyTableFile>
+    private val thingyTableFileFlow: StateFlow<ThingyTableFile>
 ) {
 
     val thingyTableFile: ThingyTableFile get() = thingyTableFileFlow.value
@@ -111,7 +111,7 @@ class HexFile private constructor(
     }
 
     companion object {
-        fun parseFile(file: File?, thingyTableFileFlow: MutableStateFlow<ThingyTableFile>): HexFile {
+        fun parseFile(file: File?, thingyTableFileFlow: StateFlow<ThingyTableFile>): HexFile {
             return HexFile(file?.readBytes() ?: TEST_ROW, thingyTableFileFlow)
         }
 

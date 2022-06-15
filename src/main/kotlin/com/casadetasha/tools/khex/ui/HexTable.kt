@@ -1,4 +1,4 @@
-package com.casadetasha.tools.khex
+package com.casadetasha.tools.khex.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.material.Text
@@ -6,7 +6,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
-import com.casadetasha.tools.khex.compose.cellSize
 
 @Composable
 fun HexCell(byteState: State<Byte>) {

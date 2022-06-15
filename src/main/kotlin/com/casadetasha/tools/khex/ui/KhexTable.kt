@@ -1,4 +1,4 @@
-package com.casadetasha.tools.khex.compose
+package com.casadetasha.tools.khex.ui
 
 import HexFile
 import HexRowIndexes
@@ -15,10 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.casadetasha.tools.khex.HexCell
 import com.casadetasha.tools.khex.PreviewCell
 import com.casadetasha.tools.khex.PreviewHeaderCell
-import com.casadetasha.tools.khex.compose.StaticCellValues.HEADER_CELLS
+import com.casadetasha.tools.khex.ui.StaticCellValues.HEADER_CELLS
 import com.casadetasha.tools.khex.khexTypography
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -42,7 +41,7 @@ fun KhexTable(hexFileFlow: MutableStateFlow<HexFile>) {
     }
 
     Column {
-        KhexTableHeader()
+        KhexTableCellHeaderRow()
 
         LazyColumn(
             state = listState,
@@ -58,7 +57,7 @@ fun KhexTable(hexFileFlow: MutableStateFlow<HexFile>) {
 }
 
 @Composable
-fun KhexTableHeader() {
+fun KhexTableCellHeaderRow() {
     Row {
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             Box(modifier = Modifier.rowNumberSize())

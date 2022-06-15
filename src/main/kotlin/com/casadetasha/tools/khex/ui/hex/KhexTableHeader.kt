@@ -1,4 +1,4 @@
-package com.casadetasha.tools.khex.ui
+package com.casadetasha.tools.khex.ui.hex
 
 import HexFile
 import androidx.compose.foundation.layout.Column
@@ -11,11 +11,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.casadetasha.tools.khex.file.ThingyTableFile
+import com.casadetasha.tools.khex.ui.SelectFileDialog
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
-fun KhexTableHeader(hexFileFlow: MutableStateFlow<HexFile>, thingyTableFileFlow: MutableStateFlow<ThingyTableFile>) {
+fun KhexTableHeader(hexFileFlow: MutableStateFlow<HexFile>, thingyTableFileFlow: StateFlow<ThingyTableFile>) {
     val hexFileState = hexFileFlow.collectAsState()
     val hexFile by remember { hexFileState }
     val searchResultFlow: StateFlow<Pair<Int, Int>?> = hexFile.searchResultFlow

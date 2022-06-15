@@ -1,4 +1,4 @@
-package com.casadetasha.tools.khex
+package com.casadetasha.tools.khex.ui.hex
 
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.size

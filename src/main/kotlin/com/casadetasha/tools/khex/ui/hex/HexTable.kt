@@ -1,4 +1,4 @@
-package com.casadetasha.tools.khex.ui
+package com.casadetasha.tools.khex.ui.hex
 
 import androidx.compose.foundation.background
 import androidx.compose.material.Text

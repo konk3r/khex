@@ -1,4 +1,4 @@
-package com.casadetasha.tools.khex.ui
+package com.casadetasha.tools.khex.ui.hex
 
 import HexFile
 import HexRowIndexes
@@ -15,18 +15,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.casadetasha.tools.khex.PreviewCell
-import com.casadetasha.tools.khex.PreviewHeaderCell
-import com.casadetasha.tools.khex.ui.StaticCellValues.HEADER_CELLS
+import com.casadetasha.tools.khex.file.ThingyTableFile
 import com.casadetasha.tools.khex.khexTypography
+import com.casadetasha.tools.khex.ui.hex.StaticCellValues.HEADER_CELLS
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import toKey
 
 @Composable
-fun KhexTable(hexFileFlow: MutableStateFlow<HexFile>) {
+fun KhexTable(hexFileFlow: MutableStateFlow<HexFile>, thingyTableFileFlow: StateFlow<ThingyTableFile>) {
     val listCoroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val hexFileState = hexFileFlow.collectAsState()
@@ -40,17 +40,20 @@ fun KhexTable(hexFileFlow: MutableStateFlow<HexFile>) {
         }
     }
 
-    Column {
-        KhexTableCellHeaderRow()
+    Column(modifier = Modifier.padding(start = 32.dp, end = 32.dp, top = 8.dp)) {
+        KhexTableHeader(hexFileFlow, thingyTableFileFlow)
+        Column {
+            KhexTableCellHeaderRow()
 
-        LazyColumn(
-            state = listState,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            items(
-                items = hexRows
-            ) { row ->
-                KhexTableRow(hexFile, row)
+            LazyColumn(
+                state = listState,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                items(
+                    items = hexRows
+                ) { row ->
+                    KhexTableRow(hexFile, row)
+                }
             }
         }
     }

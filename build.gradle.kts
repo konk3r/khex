@@ -26,8 +26,12 @@ tasks.withType<KotlinCompile> {
 
 compose.desktop {
     application {
-        mainClass = "MainKt"
+        mainClass = "com.casadetasha.tools.khex.MainKt"
         nativeDistributions {
+            jvmArgs(
+                "-Dapple.awt.application.appearance=system"
+            )
+
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "untitled1"
             packageVersion = "1.0.0"

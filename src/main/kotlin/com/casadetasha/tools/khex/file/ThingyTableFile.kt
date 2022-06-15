@@ -1,9 +1,12 @@
+package com.casadetasha.tools.khex.file
+
+import com.casadetasha.tools.khex.toHex
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
 
-class ThingyTable private constructor(private val charMap: Map<Byte, Char>, private val byteMap: Map<Char, Byte>) {
+class ThingyTableFile private constructor(private val charMap: Map<Byte, Char>, private val byteMap: Map<Char, Byte>) {
 
     private val _hexMapListFlow: MutableStateFlow<List<Pair<String, Char>>> = MutableStateFlow(
         charMap.toSortedMap()
@@ -27,9 +30,9 @@ class ThingyTable private constructor(private val charMap: Map<Byte, Char>, priv
 
         private val HEX_REGEX = """^(0x|xX)?[a-fA-F\d]{2}$""".toRegex()
 
-        val emptyTable = ThingyTable(emptyMap(), emptyMap())
+        val emptyTable = ThingyTableFile(emptyMap(), emptyMap())
 
-        fun parseFromFile(file: File): ThingyTable {
+        fun parseFromFile(file: File): ThingyTableFile {
             val byteMap = HashMap<Char, Byte>()
             val charMap = HashMap<Byte, Char>()
             file.readLines(UTF_8)
@@ -52,7 +55,7 @@ class ThingyTable private constructor(private val charMap: Map<Byte, Char>, priv
                     charMap[byteValue] = charValue
                 }
 
-            return ThingyTable(charMap, byteMap)
+            return ThingyTableFile(charMap, byteMap)
         }
 
         private fun checkValidHex(hexValue: String) {

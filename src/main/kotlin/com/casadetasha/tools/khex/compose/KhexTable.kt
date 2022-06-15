@@ -1,23 +1,79 @@
-import androidx.compose.foundation.background
+package com.casadetasha.tools.khex.compose
+
+import HexFile
+import HexRowIndexes
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.ProvideTextStyle
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.casadetasha.tools.khex.HexCell
+import com.casadetasha.tools.khex.PreviewCell
+import com.casadetasha.tools.khex.PreviewHeaderCell
+import com.casadetasha.tools.khex.compose.StaticCellValues.HEADER_CELLS
+import com.casadetasha.tools.khex.khexTypography
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.launch
+import toKey
 
 @Composable
-fun BodyRow(hexRepo: HexFile, hexRow: HexRowIndexes) {
+fun KhexTable(hexFileFlow: MutableStateFlow<HexFile>) {
+    val listCoroutineScope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
+    val hexFileState = hexFileFlow.collectAsState()
+    val hexFile by remember { hexFileState }
+    val hexRows = hexFile.lineIndexes
+
+    listCoroutineScope.launch {
+        hexFile.searchResultFlow.filterNotNull().collectLatest {
+            val paddedIndex = Integer.max(it.first - 1, 0)
+            listState.scrollToItem(paddedIndex)
+        }
+    }
+
+    Column {
+        KhexTableHeader()
+
+        LazyColumn(
+            state = listState,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            items(
+                items = hexRows
+            ) { row ->
+                KhexTableRow(hexFile, row)
+            }
+        }
+    }
+}
+
+@Composable
+fun KhexTableHeader() {
+    Row {
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Box(modifier = Modifier.rowNumberSize())
+            (HEADER_CELLS + " ").forEach {
+                HeaderCell(it)
+            }
+            HEADER_CELLS.forEach {
+                PreviewHeaderCell(it)
+            }
+        }
+    }
+}
+
+@Composable
+fun KhexTableRow(hexRepo: HexFile, hexRow: HexRowIndexes) {
     ProvideTextStyle(khexTypography.body2) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -57,26 +113,6 @@ fun BodyRow(hexRepo: HexFile, hexRow: HexRowIndexes) {
 }
 
 @Composable
-fun HeaderCell(text: String) {
-    Text(
-        text = text,
-        textAlign = TextAlign.Center,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.cellSize()
-    )
-}
-
-@Composable
-fun PreviewHeaderCell(text: String) {
-    Text(
-        text = text,
-        textAlign = TextAlign.Center,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.previewSize()
-    )
-}
-
-@Composable
 fun RowNumberCell(rowNumber: Int) {
     val hexValue = "0x%08x".format(rowNumber)
     SelectionContainer {
@@ -89,38 +125,34 @@ fun RowNumberCell(rowNumber: Int) {
 }
 
 @Composable
-fun HexCell(byteState: State<Byte>) {
-    val byte by remember { byteState }
-    val hexValue by derivedStateOf { byte.toHex() }
+fun HeaderCell(text: String) {
     Text(
-        text = hexValue,
-        modifier = Modifier.cellSize().background(color = Color.LightGray),
+        text = text,
         textAlign = TextAlign.Center,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.cellSize()
     )
 }
 
-internal fun Byte.toHex() = "%02x".format(this)
+object StaticCellValues {
 
-@Composable
-fun PreviewCell(charState: State<Char>, onTextChanged: (String) -> Unit) {
-    val char by remember { charState }
-    var isSelected by remember { mutableStateOf(false) }
-    val byteValue: TextFieldValue by derivedStateOf {
-        val selectionRange = if (isSelected) TextRange(0, 1) else TextRange.Zero
-        TextFieldValue(char.toString(), selection = selectionRange)
-    }
-
-    BasicTextField(
-        value = byteValue,
-        onValueChange = { if (it.text.length <= 1) (onTextChanged(it.text)) },
-        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
-        modifier = Modifier.previewSize()
-            .onFocusChanged { focusState ->
-                when (focusState.isFocused) {
-                    true -> isSelected = true
-                    false -> isSelected = false
-                }
-            },
+    val HEADER_CELLS = listOf(
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
     )
 }
 
@@ -128,11 +160,6 @@ internal fun Modifier.rowNumberSize(): Modifier {
     return this.size(width = 124.dp, height = 32.dp).defaultMinSize(minWidth = 64.dp, minHeight = 32.dp)
 }
 
-private fun Modifier.cellSize(): Modifier {
+internal fun Modifier.cellSize(): Modifier {
     return this.size(width = 32.dp, height = 32.dp).defaultMinSize(minWidth = 32.dp, minHeight = 32.dp)
 }
-
-private fun Modifier.previewSize(): Modifier {
-    return this.size(width = 14.dp, height = 32.dp).defaultMinSize(minWidth = 14.dp, minHeight = 32.dp)
-}
-

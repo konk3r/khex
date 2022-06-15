@@ -1,13 +1,14 @@
+import com.casadetasha.tools.khex.file.ThingyTableFile
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.*
 import java.io.File
 
 class HexFile private constructor(
     private val byteArray: ByteArray,
-    private val thingyTableFlow: MutableStateFlow<ThingyTable>
+    private val thingyTableFileFlow: MutableStateFlow<ThingyTableFile>
 ) {
 
-    val thingyTable: ThingyTable get() = thingyTableFlow.value
+    val thingyTableFile: ThingyTableFile get() = thingyTableFileFlow.value
 
     val lineIndexes: List<HexRowIndexes>
 
@@ -32,7 +33,7 @@ class HexFile private constructor(
     val searchResultFlow: StateFlow<Pair<Int, Int>?> = _searchResultFlow
 
     fun search(searchString: String) {
-        val searchBytes = searchString.map { thingyTable.mapToByte(it) }
+        val searchBytes = searchString.map { thingyTableFile.mapToByte(it) }
         val firstByte = searchBytes.firstOrNull() ?: return clearSearch()
 
         byteSearch@ for (indexedByte in byteArray.withIndex()) {
@@ -62,7 +63,7 @@ class HexFile private constructor(
     }
 
     @Synchronized fun updateWithTableConversion(charValue: Char, rowIndex: Int, columnIndex: Int) {
-        val byteValue = thingyTable.mapToByte(charValue)
+        val byteValue = thingyTableFile.mapToByte(charValue)
         val index = rowIndex * 16 + columnIndex
         val cellByteFlow = cellByteFlows[Pair(rowIndex, columnIndex).toKey()]
 
@@ -89,8 +90,8 @@ class HexFile private constructor(
     @Synchronized fun getPreviewCellByteFlow(rowIndex: Int, columnIndex: Int): StateFlow<Char> {
         val cellByteFlow = getCellByteFlow(rowIndex, columnIndex);
         return cellByteFlow.map {
-            thingyTable.mapToChar(it)
-        }.stateIn(GlobalScope, SharingStarted.Eagerly, thingyTable.mapToChar(cellByteFlow.value))
+            thingyTableFile.mapToChar(it)
+        }.stateIn(GlobalScope, SharingStarted.Eagerly, thingyTableFile.mapToChar(cellByteFlow.value))
     }
 
     @Synchronized fun cleanupCellByteFlow(rowIndex: Int, columnIndex: Int) {
@@ -110,8 +111,8 @@ class HexFile private constructor(
     }
 
     companion object {
-        fun parseFile(file: File?, thingyTableFlow: MutableStateFlow<ThingyTable>): HexFile {
-            return HexFile(file?.readBytes() ?: TEST_ROW, thingyTableFlow)
+        fun parseFile(file: File?, thingyTableFileFlow: MutableStateFlow<ThingyTableFile>): HexFile {
+            return HexFile(file?.readBytes() ?: TEST_ROW, thingyTableFileFlow)
         }
 
         private val TEST_ROW: ByteArray = byteArrayOf(

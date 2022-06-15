@@ -1,3 +1,5 @@
+package com.casadetasha.tools.khex
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,15 +12,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.casadetasha.tools.khex.file.ThingyTableFile
 import kotlinx.coroutines.flow.MutableStateFlow
 
 private val tableFileNameFlow = MutableStateFlow("")
 private val searchResultFlow: MutableStateFlow<Pair<Int, Int>?> = MutableStateFlow(null)
 
 @Composable
-fun ThingyTableDisplay(thingyTableFlow: MutableStateFlow<ThingyTable>) {
+fun ThingyTableDisplay(thingyTableFileFlow: MutableStateFlow<ThingyTableFile>) {
     var selectedTabIndex by remember { mutableStateOf(0) }
     val isFileTableSelected by derivedStateOf { selectedTabIndex == 0 }
 
@@ -48,7 +50,7 @@ fun ThingyTableDisplay(thingyTableFlow: MutableStateFlow<ThingyTable>) {
         Column(modifier = Modifier.background(color = Color(0xFFECECEC)).fillMaxSize()) {
 
             when (isFileTableSelected) {
-                true -> FileContent(thingyTableFlow)
+                true -> FileContent(thingyTableFileFlow)
                 false -> GenerateContent()
             }
         }
@@ -75,7 +77,7 @@ fun GenerateContent() {
             val searchTextValue by derivedStateOf { "Result: $searchResultValue" }
             Text(searchTextValue)
         }
-        Button(onClick = {matchText(matchTextFieldValue.text)}, content = { Text("MATCH") })
+        Button(onClick = { matchText(matchTextFieldValue.text) }, content = { Text("MATCH") })
     }
 }
 
@@ -84,8 +86,8 @@ fun matchText(text: String) {
 }
 
 @Composable
-fun FileContent(thingyTableFlow: MutableStateFlow<ThingyTable>) {
-    val thingyTableState = thingyTableFlow.collectAsState()
+fun FileContent(thingyTableFileFlow: MutableStateFlow<ThingyTableFile>) {
+    val thingyTableState = thingyTableFileFlow.collectAsState()
     val thingyTable by remember { thingyTableState }
     val thingyHexMapListState = thingyTable.hexMapListFlow.collectAsState()
     val thingyHexMapList by remember { thingyHexMapListState }
@@ -98,7 +100,7 @@ fun FileContent(thingyTableFlow: MutableStateFlow<ThingyTable>) {
             )
         ) { file ->
             tableFileNameFlow.value = file?.name ?: ""
-            file?.let { thingyTableFlow.value = ThingyTable.parseFromFile(it) }
+            file?.let { thingyTableFileFlow.value = ThingyTableFile.parseFromFile(it) }
             isTableFileChooserOpen = false
         }
     }
@@ -127,4 +129,3 @@ fun FileContent(thingyTableFlow: MutableStateFlow<ThingyTable>) {
         }
     }
 }
-

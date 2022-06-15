@@ -1,4 +1,5 @@
-// Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+package com.casadetasha.tools.khex// Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+import HexFile
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
+import com.casadetasha.tools.khex.compose.KhexTable
+import com.casadetasha.tools.khex.file.ThingyTableFile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.io.File
@@ -25,9 +28,9 @@ import javax.swing.filechooser.FileNameExtensionFilter
 
 lateinit var khexTypography: Typography
 
-private var thingyTableFlow: MutableStateFlow<ThingyTable> = MutableStateFlow(ThingyTable.emptyTable)
+private var thingyTableFileFlow: MutableStateFlow<ThingyTableFile> = MutableStateFlow(ThingyTableFile.emptyTable)
 private var hexRepoFlow: MutableStateFlow<HexFile> = MutableStateFlow(
-    HexFile.parseFile(null, thingyTableFlow)
+    HexFile.parseFile(null, thingyTableFileFlow)
 )
 
 private val searchResultFlow: StateFlow<Pair<Int, Int>?> get() = hexRepoFlow.value.searchResultFlow
@@ -122,19 +125,15 @@ fun App() {
                 if (isSourceFileChooserOpen) {
                     SelectFileDialog { file ->
                         hexFileNameFlow.value = file?.name ?: ""
-                        hexRepoFlow.value = HexFile.parseFile(file, thingyTableFlow)
+                        hexRepoFlow.value = HexFile.parseFile(file, thingyTableFileFlow)
                         isSourceFileChooserOpen = false
                     }
                 }
 
-                val tableState = hexRepoFlow.collectAsState()
-                val tableRepo by remember { tableState }
-
-                HexHeaderRow()
-                HexTable(tableRepo)
+                KhexTable(hexRepoFlow)
             }
 
-            ThingyTableDisplay(thingyTableFlow)
+            ThingyTableDisplay(thingyTableFileFlow)
         }
     }
 }

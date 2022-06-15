@@ -46,7 +46,7 @@ fun App() {
         Row {
             KhexTable(hexFileFlow, thingyTableFileFlow)
 
-            ThingyTableDisplay(thingyTableFileFlow)
+            ThingyTableDisplay(thingyTableFileFlow, hexFileFlow)
         }
     }
 }

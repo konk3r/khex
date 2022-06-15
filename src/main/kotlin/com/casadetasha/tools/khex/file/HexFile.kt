@@ -105,6 +105,26 @@ class HexFile private constructor(
         }
     }
 
+    fun matchFileContent(byteDeltaString: List<Int>): Pair<Int, Int>? {
+        rootMatchLoop@ for (indexedByte in byteArray.withIndex()) {
+            val index = indexedByte.index
+            val byteValue = indexedByte.value.toInt()
+
+            if (index + byteDeltaString.size > byteArray.size) return null
+            for (charIndex in byteDeltaString.withIndex()) {
+                val subIndex = index + charIndex.index
+                val possibleCharValue = byteValue + charIndex.value
+                if (byteArray[subIndex].toInt() != possibleCharValue) continue@rootMatchLoop
+            }
+            return Pair(index / 16, index % 16)
+        }
+        return null
+    }
+
+    fun scrollTo(scrollPosition: Pair<Int, Int>) {
+        _searchResultFlow.value = scrollPosition
+    }
+
     private fun MutableMap<String, MutableStateFlow<Byte>>.insertAndReturn(key: String, value: Byte): StateFlow<Byte> {
         this[key] = MutableStateFlow(value)
         return this[key]!!

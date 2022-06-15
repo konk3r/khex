@@ -25,3 +25,22 @@ fun SelectFileDialog(fileExtension: FileExtensionInfo? = null, onFileSelected: (
         }
     )
 }
+
+@Composable
+fun SaveFileDialog(fileExtension: FileExtensionInfo? = null, onFileSelected: (File?) -> Unit) {
+    SwingPanel(
+        factory = {
+            JPanel().apply {
+                val chooser = JFileChooser("""C:\Users\konk3\OneDrive\projects\rpi-bs zelda""")
+                chooser.dialogTitle = "Save table to file"
+                fileExtension?.let { chooser.fileFilter = FileNameExtensionFilter(it.description, it.extension) }
+
+                val file = when (chooser.showSaveDialog(null)) {
+                    JFileChooser.APPROVE_OPTION -> chooser.selectedFile
+                    else -> null
+                }
+                onFileSelected(file)
+            }
+        }
+    )
+}

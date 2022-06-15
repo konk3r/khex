@@ -11,6 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.casadetasha.tools.khex.file.FileContentMatcher
+import com.casadetasha.tools.khex.file.FileExtensionInfo
+import com.casadetasha.tools.khex.file.ThingyTableFile
+import com.casadetasha.tools.khex.ui.SaveFileDialog
+import com.casadetasha.tools.khex.ui.SelectFileDialog
 
 @Composable
 fun GenerateContent(fileContentMatcher: FileContentMatcher) {
@@ -18,6 +22,8 @@ fun GenerateContent(fileContentMatcher: FileContentMatcher) {
     val searchResultValue by remember { state }
     var matchTextFieldValue by remember { mutableStateOf(TextFieldValue("")) }
     val searchResultPosition by remember { state }
+    var tableOutputText by remember { mutableStateOf("") }
+    var isSaveToFileDialogOpen by remember { mutableStateOf(false) }
 
     Column {
         TextField(
@@ -45,10 +51,32 @@ fun GenerateContent(fileContentMatcher: FileContentMatcher) {
             )
 
             Button(
-                onClick = { fileContentMatcher.scrollToResult() },
+                onClick = { tableOutputText = fileContentMatcher.generateTable() },
                 content = { Text("Generate table") },
                 modifier = Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp)
             )
+
+            if (tableOutputText.isNotBlank()) {
+                Button(
+                    onClick = { isSaveToFileDialogOpen = true },
+                    content = { Text("Save to file") },
+                    modifier = Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp)
+                )
+
+                Text(tableOutputText, Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp))
+
+                if (isSaveToFileDialogOpen) {
+                    SaveFileDialog(
+                        fileExtension = FileExtensionInfo(
+                            description = "Thingy table file",
+                            extension = "tbl"
+                        )
+                    ) {
+                        file -> file?.writeBytes(tableOutputText.toByteArray())
+                        isSaveToFileDialogOpen = false
+                    }
+                }
+            }
         }
     }
 }

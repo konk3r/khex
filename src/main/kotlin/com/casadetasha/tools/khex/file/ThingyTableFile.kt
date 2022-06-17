@@ -4,7 +4,6 @@ import com.casadetasha.tools.khex.ui.hex.toHex
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.io.File
-import java.nio.charset.StandardCharsets.UTF_8
 
 class ThingyTableFile private constructor(private val charMap: Map<Byte, Char>, private val byteMap: Map<Char, Byte>) {
 
@@ -33,10 +32,18 @@ class ThingyTableFile private constructor(private val charMap: Map<Byte, Char>, 
         val emptyTable = ThingyTableFile(emptyMap(), emptyMap())
 
         fun parseFromFile(file: File): ThingyTableFile {
+            return parseFromLines(file.readLines())
+        }
+
+        fun parseFromString(table: String): ThingyTableFile {
+            return parseFromLines(table.lines())
+        }
+
+        private fun parseFromLines(lines: List<String>): ThingyTableFile {
             val byteMap = HashMap<Char, Byte>()
             val charMap = HashMap<Byte, Char>()
-            file.readLines(UTF_8)
-                .filterNot { it.isBlank() }
+
+            lines.filterNot { it.isBlank() }
                 .map {
                     val splitIndex = it.indexOf("=")
                     check(splitIndex > 0) { "Invalid tbl file, all non blank lines must text separated by a \"=\" symbol" }

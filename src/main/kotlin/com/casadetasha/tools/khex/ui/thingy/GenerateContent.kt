@@ -1,7 +1,11 @@
 package com.casadetasha.tools.khex.ui.thingy
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Button
 import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.Text
@@ -12,16 +16,13 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.casadetasha.tools.khex.file.FileContentMatcher
 import com.casadetasha.tools.khex.file.FileExtensionInfo
-import com.casadetasha.tools.khex.file.ThingyTableFile
 import com.casadetasha.tools.khex.ui.SaveFileDialog
-import com.casadetasha.tools.khex.ui.SelectFileDialog
 
 @Composable
 fun GenerateContent(fileContentMatcher: FileContentMatcher) {
     val state = fileContentMatcher.matchResultFlow.collectAsState()
     val searchResultValue by remember { state }
     var matchTextFieldValue by remember { mutableStateOf(TextFieldValue("")) }
-    val searchResultPosition by remember { state }
     var tableOutputText by remember { mutableStateOf("") }
     var isSaveToFileDialogOpen by remember { mutableStateOf(false) }
 
@@ -41,39 +42,57 @@ fun GenerateContent(fileContentMatcher: FileContentMatcher) {
             modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)
         )
 
-        if (searchResultValue != null) {
-            Text("Position: $searchResultPosition", Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp))
+        if (searchResultValue.isNotEmpty()) {
+            LazyColumn {
+                items(items = searchResultValue) {result ->
+                    Column {
+                        Text("Position: $result", Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp))
 
-            Button(
-                onClick = { fileContentMatcher.scrollToResult() },
-                content = { Text("Scroll to match") },
-                modifier = Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp)
-            )
+                        Row {
+                            Button(
+                                onClick = { fileContentMatcher.scrollToResult(result) },
+                                content = { Text("Scroll to match") },
+                                modifier = Modifier.padding(top = 8.dp, start = 16.dp, end = 4.dp)
+                            )
 
-            Button(
-                onClick = { tableOutputText = fileContentMatcher.generateTable() },
-                content = { Text("Generate table") },
-                modifier = Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp)
-            )
+                            Button(
+                                onClick = { fileContentMatcher.applyTable(result) },
+                                content = { Text("Apply table") },
+                                modifier = Modifier.padding(top = 8.dp, start = 16.dp, end = 4.dp)
+                            )
+                        }
 
-            if (tableOutputText.isNotBlank()) {
-                Button(
-                    onClick = { isSaveToFileDialogOpen = true },
-                    content = { Text("Save to file") },
-                    modifier = Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp)
-                )
-
-                Text(tableOutputText, Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp))
-
-                if (isSaveToFileDialogOpen) {
-                    SaveFileDialog(
-                        fileExtension = FileExtensionInfo(
-                            description = "Thingy table file",
-                            extension = "tbl"
+                        Button(
+                            onClick = { tableOutputText = fileContentMatcher.generateTable(result) },
+                            content = { Text("Generate table") },
+                            modifier = Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp)
                         )
-                    ) {
-                        file -> file?.writeBytes(tableOutputText.toByteArray())
-                        isSaveToFileDialogOpen = false
+                    }
+                }
+
+                item {
+                    if (tableOutputText.isNotBlank()) {
+                        Column {
+                            Button(
+                                onClick = { isSaveToFileDialogOpen = true },
+                                content = { Text("Save to file") },
+                                modifier = Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp)
+                            )
+
+                            Text(tableOutputText, Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp))
+
+                            if (isSaveToFileDialogOpen) {
+                                SaveFileDialog(
+                                    fileExtension = FileExtensionInfo(
+                                        description = "Thingy table file",
+                                        extension = "tbl"
+                                    )
+                                ) {
+                                        file -> file?.writeBytes(tableOutputText.toByteArray())
+                                    isSaveToFileDialogOpen = false
+                                }
+                            }
+                        }
                     }
                 }
             }

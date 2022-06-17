@@ -1,14 +1,17 @@
+import androidx.compose.runtime.rememberCoroutineScope
 import com.casadetasha.tools.khex.file.ThingyTableFile
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import java.io.File
 
 class HexFile private constructor(
     private val byteArray: ByteArray,
-    private val thingyTableFileFlow: StateFlow<ThingyTableFile>
+    private val thingyTableFileFlow: MutableStateFlow<ThingyTableFile>
 ) {
 
-    val thingyTableFile: ThingyTableFile get() = thingyTableFileFlow.value
+    var thingyTableFile: ThingyTableFile = thingyTableFileFlow.value
 
     val lineIndexes: List<HexRowIndexes>
 
@@ -24,6 +27,12 @@ class HexFile private constructor(
             else -> list.add(HexRowIndexes(rowIndex = overflowRowIndex, columnCount = overflow))
         }
         lineIndexes = list
+
+        CoroutineScope(GlobalScope.coroutineContext).launch {
+            thingyTableFileFlow.collect {
+                thingyTableFile = it
+            }
+        }
     }
 
     private val cellByteFlows: MutableMap<String, MutableStateFlow<Byte>> = HashMap()
@@ -80,7 +89,6 @@ class HexFile private constructor(
         return when (val cachedValue = cellByteFlows[key]) {
             null -> {
                 val value = byteArray[rowIndex * 16 + columnIndex]
-                val char = value.toInt().toChar()
                 cellByteFlows.insertAndReturn(key, value)
             }
             else -> cachedValue
@@ -89,9 +97,9 @@ class HexFile private constructor(
 
     @Synchronized fun getPreviewCellByteFlow(rowIndex: Int, columnIndex: Int): StateFlow<Char> {
         val cellByteFlow = getCellByteFlow(rowIndex, columnIndex);
-        return cellByteFlow.map {
-            thingyTableFile.mapToChar(it)
-        }.stateIn(GlobalScope, SharingStarted.Eagerly, thingyTableFile.mapToChar(cellByteFlow.value))
+        return thingyTableFileFlow
+            .combine(cellByteFlow) { file, byte -> file.mapToChar(byte) }
+            .stateIn(GlobalScope, SharingStarted.Eagerly, thingyTableFile.mapToChar(cellByteFlow.value))
     }
 
     @Synchronized fun cleanupCellByteFlow(rowIndex: Int, columnIndex: Int) {
@@ -105,20 +113,22 @@ class HexFile private constructor(
         }
     }
 
-    fun matchFileContent(byteDeltaString: List<Int>): Pair<Int, Int>? {
+    fun matchFileContent(byteDeltaString: List<Int>): List<Pair<Int, Int>> {
+        val list: MutableList<Pair<Int, Int>> = mutableListOf()
         rootMatchLoop@ for (indexedByte in byteArray.withIndex()) {
             val index = indexedByte.index
             val byteValue = indexedByte.value.toInt()
 
-            if (index + byteDeltaString.size > byteArray.size) return null
+            if (index + byteDeltaString.size > byteArray.size) break
+
             for (charIndex in byteDeltaString.withIndex()) {
                 val subIndex = index + charIndex.index
                 val possibleCharValue = byteValue + charIndex.value
                 if (byteArray[subIndex].toInt() != possibleCharValue) continue@rootMatchLoop
             }
-            return Pair(index / 16, index % 16)
+            list += Pair(index / 16, index % 16)
         }
-        return null
+        return list
     }
 
     fun scrollTo(scrollPosition: Pair<Int, Int>) {
@@ -130,8 +140,12 @@ class HexFile private constructor(
         return this[key]!!
     }
 
+    fun updateTable(table: ThingyTableFile) {
+        thingyTableFileFlow.value = table
+    }
+
     companion object {
-        fun parseFile(file: File?, thingyTableFileFlow: StateFlow<ThingyTableFile>): HexFile {
+        fun parseFile(file: File?, thingyTableFileFlow: MutableStateFlow<ThingyTableFile>): HexFile {
             return HexFile(file?.readBytes() ?: TEST_ROW, thingyTableFileFlow)
         }
 
@@ -158,4 +172,8 @@ class HexFile private constructor(
 
 class HexRowIndexes constructor(val rowIndex: Int, val columnCount: Int)
 
-fun <A, B> Pair<A, B>.toKey(): String = "${first}/$second"
+fun Pair<Int, Int>.toKey(): String = "${first}/$second"
+
+fun String.toPair(): Pair<Int, Int> = this.split("/").map {
+    it.first().toString().toInt() to it.last().toString().toInt()
+}.first()

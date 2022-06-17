@@ -6,8 +6,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class FileContentMatcher(private val hexFileFlow: StateFlow<HexFile>) {
-    private val _matchResultFlow: MutableStateFlow<Pair<Int, Int>?> = MutableStateFlow(null)
-    val matchResultFlow: StateFlow<Pair<Int, Int>?> = _matchResultFlow
+    private val _matchResultFlow: MutableStateFlow<List<Pair<Int, Int>>> = MutableStateFlow(listOf())
+    val matchResultFlow: StateFlow<List<Pair<Int, Int>>> = _matchResultFlow
     var searchString: String = ""
 
     fun match(searchString: String) {
@@ -19,14 +19,13 @@ class FileContentMatcher(private val hexFileFlow: StateFlow<HexFile>) {
         _matchResultFlow.value = hexFileFlow.value.matchFileContent(byteDeltaString)
     }
 
-    fun scrollToResult() {
-        matchResultFlow.value?.let { hexFileFlow.value.scrollTo(it) }
+    fun scrollToResult(result: Pair<Int, Int>) {
+        hexFileFlow.value.scrollTo(result)
     }
 
-    fun generateTable(): String {
-        val matchPair = matchResultFlow.value
+    fun generateTable(result: Pair<Int, Int>): String {
         val firstSearchChar = searchString.first()
-        val firstCharCode = hexFileFlow.value.getCellByteFlow(matchPair!!.first, matchPair.second).value.toInt()
+        val firstCharCode = hexFileFlow.value.getCellByteFlow(result.first, result.second).value.toInt()
         val distanceToStart = firstSearchChar.code - 'a'.code
         val tableStartInt = firstCharCode - distanceToStart
 
@@ -35,5 +34,11 @@ class FileContentMatcher(private val hexFileFlow: StateFlow<HexFile>) {
         return ('a'.code..'z'.code).joinToString("\n") {
             "${tableCharValue++.toByte().toHex()}=${it.toChar()}"
         }
+    }
+
+    fun applyTable(result: Pair<Int, Int>) {
+        val table = generateTable(result)
+
+        hexFileFlow.value.updateTable(ThingyTableFile.parseFromString(table))
     }
 }

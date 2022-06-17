@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
-fun KhexTableHeader(hexFileFlow: MutableStateFlow<HexFile>, thingyTableFileFlow: StateFlow<ThingyTableFile>) {
+fun KhexTableHeader(hexFileFlow: MutableStateFlow<HexFile>, thingyTableFileFlow: MutableStateFlow<ThingyTableFile>) {
     val hexFileState = hexFileFlow.collectAsState()
     val hexFile by remember { hexFileState }
     val searchResultFlow: StateFlow<Pair<Int, Int>?> = hexFile.searchResultFlow

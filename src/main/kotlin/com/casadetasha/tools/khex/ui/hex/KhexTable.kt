@@ -19,14 +19,13 @@ import com.casadetasha.tools.khex.file.ThingyTableFile
 import com.casadetasha.tools.khex.khexTypography
 import com.casadetasha.tools.khex.ui.hex.StaticCellValues.HEADER_CELLS
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import toKey
 
 @Composable
-fun KhexTable(hexFileFlow: MutableStateFlow<HexFile>, thingyTableFileFlow: StateFlow<ThingyTableFile>) {
+fun KhexTable(hexFileFlow: MutableStateFlow<HexFile>, thingyTableFileFlow: MutableStateFlow<ThingyTableFile>) {
     val listCoroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val hexFileState = hexFileFlow.collectAsState()
@@ -42,17 +41,19 @@ fun KhexTable(hexFileFlow: MutableStateFlow<HexFile>, thingyTableFileFlow: State
 
     Column(modifier = Modifier.padding(start = 32.dp, end = 32.dp, top = 8.dp)) {
         KhexTableHeader(hexFileFlow, thingyTableFileFlow)
-        Column {
-            KhexTableCellHeaderRow()
+        Row {
+            Column {
+                KhexTableCellHeaderRow()
 
-            LazyColumn(
-                state = listState,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                items(
-                    items = hexRows
-                ) { row ->
-                    KhexTableRow(hexFile, row)
+                LazyColumn(
+                    state = listState,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    items(
+                        items = hexRows
+                    ) { row ->
+                        KhexTableRow(hexFile, row)
+                    }
                 }
             }
         }
@@ -82,34 +83,43 @@ fun KhexTableRow(hexRepo: HexFile, hexRow: HexRowIndexes) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             RowNumberCell(hexRow.rowIndex)
-
-            (0 until hexRow.columnCount).forEach { columnIndex ->
-                val byteState: State<Byte> = hexRepo.getCellByteFlow(hexRow.rowIndex, columnIndex).collectAsState()
-                HexCell(byteState = byteState)
-
-                DisposableEffect(Pair(hexRow.rowIndex, columnIndex).toKey()) {
-                    onDispose { hexRepo.cleanupCellByteFlow(hexRow.rowIndex, columnIndex) }
-                }
-            }
+            HexRow(hexRepo, hexRow)
 
             Box(modifier = Modifier.cellSize())
 
-            (0 until hexRow.columnCount).forEach { columnIndex ->
-                val byteState: State<Char> = hexRepo.getPreviewCellByteFlow(hexRow.rowIndex, columnIndex).collectAsState()
+            PreviewRow(hexRepo, hexRow)
+        }
+    }
+}
 
-                PreviewCell(byteState) { incomingString ->
-                    if (incomingString.length == 1) {
-                        val char = incomingString.first()
-                        hexRepo.updateWithTableConversion(char, rowIndex = hexRow.rowIndex, columnIndex = columnIndex)
-                    } else {
-                        hexRepo.updateWithTableConversion(0.toChar(), rowIndex = hexRow.rowIndex, columnIndex = columnIndex)
-                    }
-                }
+@Composable
+fun HexRow(hexRepo: HexFile, hexRow: HexRowIndexes) {
+    (0 until hexRow.columnCount).forEach { columnIndex ->
+        val byteState: State<Byte> = hexRepo.getCellByteFlow(hexRow.rowIndex, columnIndex).collectAsState()
+        HexCell(byteState = byteState)
 
-                DisposableEffect(Pair(hexRow.rowIndex, columnIndex).toKey()) {
-                    onDispose { hexRepo.cleanupCellByteFlow(hexRow.rowIndex, columnIndex) }
-                }
+        DisposableEffect(Pair(hexRow.rowIndex, columnIndex).toKey()) {
+            onDispose { hexRepo.cleanupCellByteFlow(hexRow.rowIndex, columnIndex) }
+        }
+    }
+}
+
+@Composable
+fun PreviewRow(hexRepo: HexFile, hexRow: HexRowIndexes) {
+    (0 until hexRow.columnCount).forEach { columnIndex ->
+        val byteState: State<Char> = hexRepo.getPreviewCellByteFlow(hexRow.rowIndex, columnIndex).collectAsState()
+
+        PreviewCell(byteState) { incomingString ->
+            if (incomingString.length == 1) {
+                val char = incomingString.first()
+                hexRepo.updateWithTableConversion(char, rowIndex = hexRow.rowIndex, columnIndex = columnIndex)
+            } else {
+                hexRepo.updateWithTableConversion(0.toChar(), rowIndex = hexRow.rowIndex, columnIndex = columnIndex)
             }
+        }
+
+        DisposableEffect(Pair(hexRow.rowIndex, columnIndex).toKey()) {
+            onDispose { hexRepo.cleanupCellByteFlow(hexRow.rowIndex, columnIndex) }
         }
     }
 }

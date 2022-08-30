@@ -33,7 +33,7 @@ compose.desktop {
             )
 
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "untitled1"
+            packageName = "khex"
             packageVersion = "1.0.0"
         }
     }
